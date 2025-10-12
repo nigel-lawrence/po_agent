@@ -1,0 +1,120 @@
+# PO Agent Configuration
+
+# Jira Project Settings
+project:
+  prefix: "DD"  # Your project key prefix
+  cloud_id: "a1fb11a2-b435-449f-bc65-64b93d021f71"  # Your Atlassian Cloud ID
+  name: "Data Dragons"
+
+# Custom Field IDs (discovered from your Jira instance)
+custom_fields:
+  story_syntax: "customfield_12015"  # "As a... I want... So that..." field
+  acceptance_criteria: "customfield_11874"  # BDD/Gherkin acceptance criteria field
+  account_code: "customfield_11850"  # Account code field (CDP Feature Development, etc.)
+  team: "customfield_11873"  # Team field
+
+# Issue Type IDs
+issue_types:
+  story: "10101"
+  task: "10000"
+  bug: "10102"
+  epic: "10100"
+  spike: "11419"
+
+# Status IDs
+statuses:
+  not_ready: "12772"  # "Not Ready" status
+  ready: "10000"  # "Ready" or "To Do" status (update if different)
+  in_progress: "3"
+  done: "10001"
+
+# Definition of Ready Checklist
+definition_of_ready:
+  - field: "summary"
+    name: "Title completed"
+    weight: 1
+    
+  - field: "parent"  # Epic link
+    name: "Linked to an epic (if relevant)"
+    weight: 0.5
+    optional: true
+    
+  - field: "customfield_11850"  # Account code
+    name: "Account code set"
+    weight: 1
+    
+  - field: "customfield_12015"  # Story syntax
+    name: "Story syntax completed (As a... I Want... So that...)"
+    weight: 2
+    optional_for_non_stories: true  # Required for stories, N/A acceptable for tasks/bugs
+    
+  - field: "customfield_11874"  # Acceptance Criteria
+    name: "Acceptance Criteria in BDD/Gherkin syntax"
+    weight: 2
+    
+  - field: "environments"
+    name: "Environments defined (Staging/Pre-prod/Production)"
+    weight: 1
+    check_in_description: true
+    
+  - field: "security"
+    name: "Security posture/implications/risks defined"
+    weight: 1
+    check_in_description: true
+    
+  - field: "documentation"
+    name: "Relevant documentation identified"
+    weight: 0.5
+    check_in_description: true
+    
+  - field: "story_points"
+    name: "Points estimated/assigned"
+    weight: 1
+    field_name: "customfield_10100"
+    optional: false  # Required for DoR - must be estimated before refinement
+    
+  - field: "demo"
+    name: "What to demo has been defined"
+    weight: 0.5
+    check_in_description: true
+    
+  - field: "cost"
+    name: "Cost implications considered"
+    weight: 1
+    check_in_description: true
+    
+  - field: "telemetry"
+    name: "Telemetry considered - metrics and alerts defined"
+    weight: 1
+    check_in_description: true
+
+# Backlog Cull Settings
+backlog_cull:
+  age_threshold_days: 180  # 6 months default
+  min_refinement_score: 30  # Minimum score percentage to consider keeping
+  no_activity_days: 90  # Consider items with no updates in 90 days
+
+# Refinement Preparation Settings
+refinement_prep:
+  backlog_top_items: 20  # Number of top backlog items to review
+  min_readiness_score: 70  # Minimum score to be considered "ready"
+
+# Templates for issue creation
+templates:
+  story_syntax: |
+    As a [USER TYPE]
+    I want [FEATURE/CAPABILITY]
+    So that [BUSINESS VALUE/OUTCOME]
+    
+  acceptance_criteria: |
+    Feature: [Feature Name]
+    
+    Scenario: [Scenario Name]
+      Given [precondition]
+      When [action]
+      Then [expected outcome]
+      
+    Scenario: [Another Scenario]
+      Given [precondition]
+      When [action]
+      Then [expected outcome]
