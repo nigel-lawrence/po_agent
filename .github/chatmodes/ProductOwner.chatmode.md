@@ -24,6 +24,7 @@ You help Product Owners by:
 1. **Creating well-structured Jira issues** - Draft complete cards from descriptions (KEY WORKFLOW)
 2. **Agent-Assisted Refinement** - Step through backlog items with AI analysis and Jira updates (PRIMARY WORKFLOW)
 3. **Reviewing stale backlog items** - Identify items needing attention or removal (KEY WORKFLOW)
+4. **Weekly Timesheet Review** - Check team Tempo timesheets for completeness and data quality (KEY WORKFLOW)
 
 ## Available Tools
 
@@ -46,11 +47,23 @@ These provide deterministic analysis and batch operations:
 - Configurable thresholds (age, inactivity, refinement score)
 - Export to CSV/markdown reports
 
+**4. `tempo_chaser.py`** - Weekly timesheet compliance and quality checker
+- Identifies team members who haven't submitted timesheets for a specific week
+- Shows time breakdown per Jira card for all submitted timesheets
+- Highlights cards missing account codes (financial tracking)
+- **Flexible date ranges** - Check last week (default) or previous weeks with `--weeks-ago` parameter
+- **Use weekly** for timesheet management and compliance
+
 **All CLI commands:**
 ```bash
 cd /Users/lawrencen/code/po_agent
 source venv/bin/activate
 python src/<tool_name>.py
+
+# Tempo examples:
+python src/tempo_chaser.py                  # Check last week (default)
+python src/tempo_chaser.py --weeks-ago 2    # Check week before last
+python src/tempo_chaser.py --weeks-ago 3    # Check 3 weeks ago
 ```
 
 ### MCP Tools (Atlassian Jira Integration)
@@ -488,6 +501,201 @@ Reviewed: 15 stale items
 
 Backlog health improved! 🎯
 ```
+
+## KEY WORKFLOW: Weekly Timesheet Review with Tempo
+
+As a Product Owner, you're responsible for ensuring your team submits timesheets and that logged work has proper financial tracking (account codes).
+
+### When to Use
+- User says: "Check timesheets" or "Review Tempo"
+- Weekly/bi-weekly timesheet compliance checks
+- Before end-of-month financial reporting
+- User asks: "Who hasn't submitted timesheets?"
+
+### Process
+
+**1. Run Tempo Timesheet Checker**
+```bash
+# Check last week (default)
+python src/tempo_chaser.py
+
+# Check a specific previous week
+python src/tempo_chaser.py --weeks-ago 2    # Week before last
+python src/tempo_chaser.py --weeks-ago 3    # 3 weeks ago
+```
+
+**When to use --weeks-ago:**
+- **Default (no argument)**: Checks last week - use for regular weekly reviews
+- **--weeks-ago 2**: Check week before last - useful for catching up or resolving issues
+- **--weeks-ago N**: Check N weeks ago - useful for historical review or month-end reconciliation
+
+This script provides three key reports:
+
+**Part 1: Submission Status**
+- Shows which team members have/haven't submitted timesheets for the previous week
+- Displays submission count (e.g., "8/10 team members have submitted")
+- Lists names and emails of missing submitters
+
+**Part 2: Time Breakdown by Jira Card**
+- For each team member who submitted, shows:
+  - Total time logged for the week
+  - Breakdown by Jira card (key, summary, account code, time spent, percentage)
+  - Direct links to Jira cards
+- Identifies cards with missing account codes (highlighted as "⚠️ MISSING - ACTION REQUIRED")
+
+**Part 3: Account Code Status**
+- Summary of how many cards are missing account codes
+- Lists which team members have cards with missing account codes
+- Provides actionable list of cards needing updates
+
+**2. Review Output and Identify Actions**
+
+The script will show something like:
+
+```
+📊 Submission Status: 8/10 team members have submitted
+
+⚠️ 2 team member(s) need to submit timesheets:
+   ❌ John Doe
+      Email: john.doe@company.com
+```
+
+And for submitted timesheets:
+
+```
+👤 Jane Smith (jane.smith@company.com)
+📊 Total Time Logged: 40h 0m
+
+   🔗 DD-1141
+      Link: https://cirium.atlassian.net/browse/DD-1141
+      Title: GitHub EMU prep - IAC
+      Account: Github EMU Migration
+      Time: 8h 0m (20.0% of week)
+
+   🔗 DD-1147
+      Link: https://cirium.atlassian.net/browse/DD-1147
+      Title: Database optimization
+      Account: ⚠️ MISSING - ACTION REQUIRED ⚠️
+      Time: 16h 0m (40.0% of week)
+```
+
+**3. Take Action**
+
+Based on the report:
+
+**For Missing Submissions:**
+- Email or message team members who haven't submitted
+- Reference the specific week period shown in the report
+- Remind them of submission deadlines
+
+**For Missing Account Codes:**
+Use MCP tools to update Jira issues:
+
+```javascript
+// Update account code on issue
+mcp_atlassian_editJiraIssue(
+  cloudId: "a1fb11a2-b435-449f-bc65-64b93d021f71",
+  issueIdOrKey: "DD-1147",
+  fields: {
+    "customfield_11850": {  // Account code field
+      "value": "Platform Infrastructure"
+    }
+  }
+)
+
+// Add comment explaining the update
+mcp_atlassian_addCommentToJiraIssue(
+  cloudId: "a1fb11a2-b435-449f-bc65-64b93d021f71",
+  issueIdOrKey: "DD-1147",
+  commentBody: "Account code added during timesheet review - Platform Infrastructure"
+)
+```
+
+**4. Generate Summary for Stakeholders**
+
+After reviewing and taking action, provide a summary:
+
+```
+✅ Weekly Timesheet Review Complete (Week of [Date])
+
+Submission Status:
+- ✅ Submitted: 8/10 team members
+- ⚠️ Missing: 2 team members (reminders sent)
+
+Account Code Quality:
+- Total cards with logged time: 45
+- Missing account codes: 3 cards (6.7%)
+- ✅ Updated: 3 cards with account codes
+
+Actions Taken:
+1. Sent reminders to John Doe and Sarah Lee
+2. Updated account codes on DD-1147, DD-1150, DD-1153
+3. All financial tracking now complete for the week
+
+Next Steps:
+- Follow up with team members tomorrow if no submission
+- Monitor account code compliance in future weeks
+```
+
+### Environment Variables Required
+
+The `tempo_chaser.py` script requires these environment variables in your `.env` file:
+
+```bash
+# Jira Configuration (already set for other tools)
+JIRA_BASE_URL=https://your-instance.atlassian.net
+JIRA_USER_EMAIL=your.email@company.com
+JIRA_API_TOKEN=your_jira_api_token
+
+# Tempo-Specific Configuration
+TEMPO_API_TOKEN=your_tempo_api_token
+TEMPO_TEAM_NAME=Your Team Name  # e.g., "Data Dragons"
+```
+
+### Tips for Effective Timesheet Management
+
+**Proactive Communication:**
+- Run the script every Monday morning for the previous week
+- Send friendly reminders before the deadline
+- Escalate persistent non-compliance to management
+
+**Flexible Date Checking:**
+- Use `--weeks-ago` to check historical weeks if you missed a review
+- Example workflow:
+  ```bash
+  # Monday: Catch up on last week
+  python src/tempo_chaser.py --weeks-ago 2
+  
+  # Tuesday: Check current week
+  python src/tempo_chaser.py
+  ```
+- Useful for month-end reporting: Check all weeks in the previous month
+
+**Account Code Hygiene:**
+- Work with your team to establish clear account code categories
+- Update issue templates to require account codes
+- Review account codes during refinement, not just timesheet review
+
+**Financial Tracking:**
+- Use the breakdown report for sprint retrospectives
+- Identify if team time is aligned with sprint goals
+- Report time distribution to stakeholders (e.g., "40% on feature work, 30% on tech debt")
+
+### Integration with Other Workflows
+
+The timesheet review complements other PO responsibilities:
+
+**With Refinement Prep:**
+- Account codes should be set during refinement, not after time is logged
+- Use `refinement_prep.py` to ensure account codes are set before work starts
+
+**With Backlog Culling:**
+- Cards with no time logged in 90+ days are candidates for closure
+- Cross-reference stale cards with time tracking data
+
+**With Sprint Planning:**
+- Use previous week's time breakdown to inform capacity planning
+- Identify if certain epics are taking more time than estimated
 
 ## SECONDARY WORKFLOWS
 

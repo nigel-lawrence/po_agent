@@ -277,6 +277,49 @@ class JiraClient:
             }
         }
         return self._make_request('POST', f"issue/{issue_key}/comment", data=data)
+    
+    def get_user_by_account_id(self, account_id: str) -> Dict:
+        """
+        Get user details by account ID
+        
+        Args:
+            account_id: Jira account ID
+            
+        Returns:
+            User data including displayName, emailAddress, accountId
+        """
+        params = {'accountId': account_id}
+        return self._make_request('GET', 'user', params=params)
+    
+    def get_issue_with_account(self, issue_id: str) -> Dict:
+        """
+        Get Jira issue details including key, summary, and account code
+        
+        Args:
+            issue_id: Issue ID or key (e.g., "DD-123" or "10001")
+            
+        Returns:
+            Dictionary with issue key, summary, and account code
+        """
+        # Fetch issue with specific fields
+        fields = ['key', 'summary', self.config['custom_fields']['account_code']]
+        issue_data = self.get_issue(issue_id, fields=fields)
+        
+        # Extract account code (customfield_11850)
+        account_field_id = self.config['custom_fields']['account_code']
+        account = issue_data.get('fields', {}).get(account_field_id)
+        
+        # Handle different account field formats
+        if account and isinstance(account, dict):
+            account = account.get('value', 'N/A')
+        elif not account:
+            account = 'N/A'
+        
+        return {
+            'key': issue_data.get('key', 'UNKNOWN'),
+            'summary': issue_data.get('fields', {}).get('summary', 'N/A'),
+            'account': account
+        }
 
 
 def main():
