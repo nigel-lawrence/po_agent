@@ -4,11 +4,12 @@ An intelligent agent system designed to help Product Owners manage their Jira ba
 
 ## 🎯 Overview
 
-PO Agent provides three powerful CLI tools to help Product Owners:
+PO Agent provides four powerful CLI tools to help Product Owners:
 
 1. **Issue Creator** - Draft well-structured Jira issues with complete story syntax and acceptance criteria
 2. **Refinement Preparation** - Review and score backlog items against your Definition of Ready
 3. **Backlog Cull** - Identify stale issues that may be candidates for removal
+4. **Tempo Timesheet Checker** - Monitor team timesheet submissions and identify missing account codes
 
 ## ✨ Features
 
@@ -27,6 +28,7 @@ PO Agent provides three powerful CLI tools to help Product Owners:
 - Python 3.8+
 - Jira account with API access
 - Jira API token ([How to create](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/))
+- Tempo API token (optional, for timesheet checking) ([How to create](https://help.tempo.io/cloud/en/tempo-timesheets/getting-started/how-to-create-an-api-token-in-tempo.html))
 
 ### Installation
 
@@ -86,7 +88,14 @@ deactivate
 JIRA_URL=https://your-domain.atlassian.net
 JIRA_EMAIL=your-email@example.com
 JIRA_API_TOKEN=your-api-token-here
+TEMPO_API_TOKEN=your-tempo-api-token-here  # Optional: for timesheet checking
+TEMPO_TEAM_NAME=Your Team Name              # Optional: your Tempo team name
 ```
+
+**Getting API Tokens:**
+- **Jira API Token**: Go to [Atlassian Account Settings](https://id.atlassian.com/manage-profile/security/api-tokens) → Create API token
+- **Tempo API Token**: In Tempo → Settings → API Integration → New Token (requires Tempo admin permissions)
+- **Tempo Team Name**: Found in Tempo → Teams → Your team's display name (must match exactly)
 
 ### Project Configuration (config.yaml)
 
@@ -208,6 +217,38 @@ This will:
 - Display candidates in a ranked table
 - Offer bulk actions (label, comment, generate report)
 
+### 4. Tempo Timesheet Checker
+
+Monitor team timesheet submissions and identify issues needing attention:
+
+```bash
+# Check last week (default)
+python src/tempo_chaser.py
+
+# Check a specific week
+python src/tempo_chaser.py --weeks-ago 2  # Check 2 weeks ago
+python src/tempo_chaser.py --weeks-ago 3  # Check 3 weeks ago
+```
+
+This will:
+- **Part 1: Submission Status** - Show which team members have/haven't submitted timesheets
+- **Part 2: Time Breakdown** - Display detailed breakdown of time logged by Jira card for submitted timesheets
+- **Part 3: Account Code Status** - Identify and highlight any Jira cards missing account codes
+
+The report provides:
+- List of team members who need to submit (with email addresses for follow-up)
+- Per-person time breakdown showing hours logged on each Jira card
+- Percentage of time spent on each card
+- Direct links to Jira issues
+- Account code validation with clear warnings for missing codes
+- Actionable summary of what needs attention
+
+**Perfect for:**
+- Weekly timesheet reminders
+- Ensuring proper cost tracking via account codes
+- Understanding team capacity and utilization
+- Following up on overdue submissions
+
 ## 📊 Definition of Ready Checklist
 
 Issues are scored against these criteria:
@@ -267,7 +308,8 @@ po_agent/
 │   ├── dor_checker.py           # Definition of Ready scorer
 │   ├── issue_creator.py         # Interactive issue creator
 │   ├── refinement_prep.py       # Refinement preparation tool
-│   └── backlog_cull.py          # Backlog cull tool
+│   ├── backlog_cull.py          # Backlog cull tool
+│   └── tempo_chaser.py          # Tempo timesheet checker
 ├── config.yaml                   # Project configuration
 ├── requirements.txt              # Python dependencies
 ├── .env.example                  # Environment template
@@ -336,8 +378,10 @@ python3 src/dor_checker.py
 1. **Run refinement prep before every refinement session** - Ensures you're working on the right items
 2. **Create issues with the issue creator** - Maintains consistency and quality
 3. **Regular backlog culling** - Keep your backlog manageable (monthly or quarterly)
-4. **Iterate on DoR scores** - Don't aim for 100% immediately, focus on continuous improvement
-5. **Use GitHub Copilot** - Let AI help with repetitive content generation
+4. **Weekly timesheet checks** - Run tempo_chaser.py every Monday to follow up on submissions
+5. **Ensure account codes are set** - Use tempo reports to identify and fix missing account codes
+6. **Iterate on DoR scores** - Don't aim for 100% immediately, focus on continuous improvement
+7. **Use GitHub Copilot** - Let AI help with repetitive content generation
 
 ## 🐛 Troubleshooting
 
