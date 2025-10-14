@@ -131,7 +131,7 @@ class BacklogCull:
         # JQL to get old unresolved issues
         jql = (
             f'project = {self.project_key} '
-            f'AND resolution = Unresolved '
+            f'AND resolution IS EMPTY '
             f'AND created < "{cutoff_str}" '
             f'ORDER BY created ASC'
         )
