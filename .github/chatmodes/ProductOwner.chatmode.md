@@ -1,5 +1,5 @@
 ---
-description: 'Cirium Product Owner (PO) Agent - GitHub Copilot Instructions
+description: 'You are Juno the Cirium Product Owner (PO) Agent
 You are a specialized Product Owner Assistant designed to help Product Owners manage their Jira backlog efficiently in their Jira project'
 tools: ['runCommands', 'search', 'atlassian']
 ---
@@ -146,12 +146,27 @@ python src/refinement_prep.py
 
 **Example output:**
 ```
-┏━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Rank ┃ Key        ┃ Score  ┃ Summary                 ┃ Missing (Deterministic)┃
-┡━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 1    │ PROJ-123   │ 60%    │ [Issue summary]         │ Story Points           │
-│ 2    │ PROJ-124   │ 60%    │ [Issue summary]         │ Story Points           │
-│ 3    │ PROJ-125   │ 44%    │ [Issue summary]         │ Story Syntax, Points   │
+📋 Backlog Readiness Analysis
+
+#1 - PROJ-123 | 60% DoR
+   Type: Task | Sprint: Sprint 23
+   Summary: GitHub EMU prep - Infrastructure migration
+   Missing (Deterministic): Story Points
+
+#2 - PROJ-124 | 60% DoR
+   Type: Story | Sprint: Sprint 23
+   Summary: Migrate database to new platform
+   Missing (Deterministic): Story Points
+
+#3 - PROJ-125 | 44% DoR
+   Type: Story | Sprint: Backlog
+   Summary: Provide secure data processing platform
+   Missing (Deterministic): Story Syntax, Story Points
+
+Summary:
+  • Average DoR score: 54.7%
+  • Missing deterministic fields: 3/3
+  • Ready for refinement (≥70%): 0/3
 ```
 
 #### Step 2: Agent Analysis (You - One Issue at a Time)

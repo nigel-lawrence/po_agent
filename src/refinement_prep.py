@@ -10,7 +10,6 @@ import sys
 import yaml
 from typing import List, Dict, Any
 from rich.console import Console
-from rich.table import Table
 from rich.progress import track
 from jira_client import JiraClient
 from dor_checker import DoRChecker
@@ -121,18 +120,12 @@ class RefinementPrep:
     
     def _display_results(self, scored_issues: List[Dict]):
         """
-        Display analysis results in a table
+        Display analysis results in a structured, agent-friendly format
         
         Args:
             scored_issues: List of scored issues
         """
-        table = Table(title="Backlog Readiness Analysis", show_header=True)
-        table.add_column("Rank", style="dim", width=4)
-        table.add_column("Key", style="cyan", width=10)
-        table.add_column("Sprint", width=12)
-        table.add_column("Summary", width=35)
-        table.add_column("Score", justify="right", width=8)
-        table.add_column("Missing (Deterministic)", width=35)
+        console.print("\n[bold blue]📋 Backlog Readiness Analysis[/bold blue]\n")
         
         # Define deterministic fields we care about
         # These map the checklist item names to display names
@@ -148,50 +141,37 @@ class RefinementPrep:
             dor = item['dor_result']
             issue = item['issue']
             
-            # Get summary
+            # Get issue details
             summary = issue['fields'].get('summary', 'N/A')
-            if len(summary) > 35:
-                summary = summary[:32] + "..."
+            issue_type = issue['fields'].get('issuetype', {}).get('name', 'Unknown')
             
             # Get sprint info (customfield_10201)
             sprint_data = issue['fields'].get('customfield_10201')
             if sprint_data and len(sprint_data) > 0:
                 sprint_name = sprint_data[0].get('name', 'Unknown')
-                # Abbreviate if too long
-                if len(sprint_name) > 12:
-                    sprint_name = sprint_name[:9] + "..."
             else:
-                sprint_name = "[dim]Backlog[/dim]"
+                sprint_name = "Backlog"
             
             # Find missing deterministic fields
             missing = []
             for check in dor['checklist']:
                 if not check['passed'] and not check.get('optional', False):
-                    # Check if this is a deterministic field by its name
                     check_name = check.get('name', '')
                     if check_name in deterministic_fields:
                         missing.append(deterministic_fields[check_name])
             
-            # Format missing fields
+            # Display issue
+            score_color = "green" if dor['percentage'] >= 70 else "yellow" if dor['percentage'] >= 50 else "red"
+            console.print(f"[bold cyan]#{rank} - {issue['key']}[/bold cyan] | [{score_color}]{dor['percentage']:.0f}% DoR[/{score_color}]")
+            console.print(f"   Type: {issue_type} | Sprint: {sprint_name}")
+            console.print(f"   Summary: {summary}")
+            
             if missing:
-                missing_str = ", ".join(missing)
-                if len(missing_str) > 35:
-                    missing_str = missing_str[:32] + "..."
+                console.print(f"   [red]Missing (Deterministic): {', '.join(missing)}[/red]")
             else:
-                missing_str = "[green]None[/green]"
+                console.print("   [green]✓ All deterministic fields complete[/green]")
             
-            score_str = f"{dor['percentage']:.0f}%"
-            
-            table.add_row(
-                str(rank),
-                issue['key'],
-                sprint_name,
-                summary,
-                score_str,
-                missing_str
-            )
-        
-        console.print(table)
+            console.print("")  # Blank line between issues
         
         # Summary statistics
         avg_score = sum(item['dor_result']['percentage'] for item in scored_issues) / len(scored_issues)
@@ -207,14 +187,14 @@ class RefinementPrep:
             )
         )
         
-        console.print(f"\n[bold]Summary:[/bold]")
+        console.print("\n[bold]Summary:[/bold]")
         console.print(f"  • Average DoR score: {avg_score:.1f}%")
         console.print(f"  • Missing deterministic fields: {missing_deterministic}/{len(scored_issues)}")
         console.print(f"  • Ready for refinement (≥70%): {ready_count}/{len(scored_issues)}")
         
-        console.print(f"\n[dim]Note: 'Missing' column shows only deterministic fields:[/dim]")
-        console.print(f"[dim]  Title, Story Syntax, Acceptance Criteria, Account, Story Points[/dim]")
-        console.print(f"[dim]Other DoR criteria (security, telemetry, etc.) require agent review.[/dim]")
+        console.print("\n[dim]Note: 'Missing' fields shown above are deterministic only:[/dim]")
+        console.print("[dim]  Title, Story Syntax, Acceptance Criteria, Account, Story Points[/dim]")
+        console.print("[dim]Other DoR criteria (security, telemetry, etc.) require agent review.[/dim]")
 
 
 def main():
