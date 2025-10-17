@@ -464,8 +464,35 @@ This identifies items:
 - No updates in last 90 days
 - Low DoR scores
 
+**Output Format (AI-Friendly):**
+The tool displays each stale issue with complete details (no truncation):
+- Full issue key (e.g., DD-405)
+- Direct Jira URL
+- Complete summary
+- Staleness score (0-100, higher = more stale)
+- Age and last update dates
+- DoR score, status, priority, assignee
+- Engagement metrics (comments, watchers)
+
+Example output:
+```
+#1 - DD-405 (Task)
+https://cirium.atlassian.net/browse/DD-405
+Add git hook to automatically check branch protection rules
+
+  Staleness: 94/100 (VERY STALE)
+  • Age: 456 days (created 2024-01-15)
+  • Last updated: 456 days ago (2024-01-15)
+  • DoR Score: 30%
+  • Status: Not Ready
+  • Priority: Low
+  • Assignee: Unassigned
+  • Comments: 0
+  • Watchers: 1
+```
+
 **2. Review Each Stale Item**
-For each issue, fetch via MCP and ask:
+For each issue listed in the output, fetch via MCP and ask:
 
 **Is it still relevant?**
 - Does it align with current roadmap?
@@ -715,9 +742,18 @@ The timesheet review complements other PO responsibilities:
 ## SECONDARY WORKFLOWS
 
 ### Quick View Only (CLI Only)
+
+**Refinement Prep - View Only:**
 User: "Just show me the scores quickly"
 - Run: `python src/refinement_prep.py`
-- Display table, no agent analysis or updates
+- Display results, no agent analysis or updates
+
+**Backlog Cull - View Only:**
+User: "Just show me the stale items"
+- Run: `python src/backlog_cull.py --age 180 --activity 90`
+- Display list with full details (issue keys, URLs, staleness scores)
+- No agent analysis or updates
+- Output is AI-friendly for later processing
 
 ## Using Atlassian MCP Tools
 

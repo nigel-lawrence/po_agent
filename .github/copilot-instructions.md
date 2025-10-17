@@ -379,8 +379,23 @@ This identifies items:
 - No updates in last 90 days
 - Low DoR scores
 
+**Output Format (AI-Friendly):**
+The tool displays each stale issue with complete, untruncated details:
+- Full issue key (e.g., DD-405)
+- Direct Jira URL for easy access
+- Complete summary text
+- Staleness score (0-100, higher = more stale)
+- Age and last update dates
+- DoR score, status, priority, assignee
+- Engagement metrics (comments, watchers)
+
+This format makes it easy for you to:
+1. See all issue keys clearly (no truncation)
+2. Fetch full details via MCP using the exact issue key
+3. Process issues systematically
+
 **2. Review Each Stale Item**
-For each issue, fetch via MCP and ask:
+For each issue listed in the output, fetch via MCP and ask:
 
 **Is it still relevant?**
 - Does it align with current roadmap?

@@ -206,16 +206,40 @@ With options:
 ```bash
 # Custom thresholds
 python src/backlog_cull.py --age 180 --activity 90 --refinement 30
-
-# Export to CSV
-python src/backlog_cull.py --export-csv
 ```
 
 This will:
 - Find issues older than threshold with no recent activity
-- Calculate staleness scores
-- Display candidates in a ranked table
-- Offer bulk actions (label, comment, generate report)
+- Calculate staleness scores (0-100, higher = more stale)
+- Display each candidate with full details in AI-friendly format:
+  - Full issue key (no truncation)
+  - Complete summary
+  - Direct Jira URL
+  - Age, last update, DoR score
+  - Status, priority, assignee
+  - Engagement metrics (comments, watchers)
+- Perfect for AI agents to review and process
+
+**Output Example:**
+```
+📋 Found 15 Stale Backlog Items
+
+#1 - DD-405 (Task)
+https://cirium.atlassian.net/browse/DD-405
+Add git hook to automatically check branch protection rules
+
+  Staleness: 94/100 (VERY STALE)
+  • Age: 456 days (created 2024-01-15)
+  • Last updated: 456 days ago (2024-01-15)
+  • DoR Score: 30%
+  • Status: Not Ready
+  • Priority: Low
+  • Assignee: Unassigned
+  • Comments: 0
+  • Watchers: 1
+```
+
+**💡 Best Practice:** Use agent-assisted mode (with GitHub Copilot) to review and act on these issues. The agent can help you decide what to keep, update, or close.
 
 ### 4. Tempo Timesheet Checker
 

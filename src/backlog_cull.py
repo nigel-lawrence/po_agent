@@ -12,7 +12,6 @@ from datetime import datetime, timedelta
 from typing import List, Dict
 from dateutil import parser as date_parser
 from rich.console import Console
-from rich.table import Table
 from rich.progress import track
 from jira_client import JiraClient
 from dor_checker import DoRChecker
@@ -65,9 +64,9 @@ class BacklogCull:
         refinement_threshold = refinement_threshold or self.min_refinement_score
         
         console.print("\n[bold blue]🗑️  Backlog Cull Analysis[/bold blue]")
-        console.print(f"Identifying stale issues for potential removal\n")
+        console.print("Identifying stale issues for potential removal\n")
         
-        console.print(f"[bold]Thresholds:[/bold]")
+        console.print("[bold]Thresholds:[/bold]")
         console.print(f"  • Issue age: > {age_threshold} days")
         console.print(f"  • No activity: > {activity_threshold} days")
         console.print(f"  • Refinement score: < {refinement_threshold}%\n")
@@ -223,64 +222,52 @@ class BacklogCull:
     
     def _display_results(self, candidates: List[Dict]):
         """
-        Display cull candidates in a table
+        Display cull candidates in an AI-friendly format
         
         Args:
             candidates: List of candidate analyses
         """
-        table = Table(title=f"Backlog Cull Candidates ({len(candidates)} issues)", show_header=True)
-        table.add_column("Key", style="cyan", width=10)
-        table.add_column("Summary", width=30)
-        table.add_column("Age", justify="right", width=8)
-        table.add_column("Inactive", justify="right", width=9)
-        table.add_column("DoR%", justify="right", width=6)
-        table.add_column("Staleness", justify="right", width=10)
-        table.add_column("Priority", width=10)
-        table.add_column("Assignee", width=15)
+        console.print(f"\n[bold]📋 Found {len(candidates)} Stale Backlog Items[/bold]\n")
         
-        for candidate in candidates:
-            # Truncate summary
-            summary = candidate['summary']
-            if len(summary) > 30:
-                summary = summary[:27] + "..."
-            
-            # Format age and inactivity
-            age_str = f"{candidate['age_days']}d"
-            inactive_str = f"{candidate['days_since_update']}d"
-            
+        # Display each issue with full details (no truncation)
+        for i, candidate in enumerate(candidates, 1):
             # Color code staleness
             staleness = candidate['staleness_score']
             if staleness >= 80:
-                staleness_str = f"[red]{staleness:.0f}[/red]"
+                staleness_color = "red"
+                staleness_label = "VERY STALE"
             elif staleness >= 60:
-                staleness_str = f"[yellow]{staleness:.0f}[/yellow]"
+                staleness_color = "yellow"
+                staleness_label = "STALE"
             else:
-                staleness_str = f"{staleness:.0f}"
+                staleness_color = "white"
+                staleness_label = "Moderately Stale"
             
-            # Truncate assignee
-            assignee = candidate['assignee']
-            if len(assignee) > 15:
-                assignee = assignee[:12] + "..."
+            # Build Jira URL
+            base_url = self.client.jira_url.rstrip('/')
+            issue_url = f"{base_url}/browse/{candidate['issue_key']}"
             
-            table.add_row(
-                candidate['issue_key'],
-                summary,
-                age_str,
-                inactive_str,
-                f"{candidate['refinement_score']:.0f}",
-                staleness_str,
-                candidate['priority'],
-                assignee
-            )
-        
-        console.print(table)
+            console.print(f"[bold cyan]#{i} - {candidate['issue_key']}[/bold cyan] ({candidate['issue_type']})")
+            console.print(f"[dim]{issue_url}[/dim]")
+            console.print(f"[bold]{candidate['summary']}[/bold]")
+            console.print("")
+            console.print(f"  [bold]Staleness:[/bold] [{staleness_color}]{staleness:.0f}/100 ({staleness_label})[/{staleness_color}]")
+            console.print(f"  • Age: {candidate['age_days']} days (created {candidate['created']})")
+            console.print(f"  • Last updated: {candidate['days_since_update']} days ago ({candidate['updated']})")
+            console.print(f"  • DoR Score: {candidate['refinement_score']:.0f}%")
+            console.print(f"  • Status: {candidate['status']}")
+            console.print(f"  • Priority: {candidate['priority']}")
+            console.print(f"  • Assignee: {candidate['assignee']}")
+            console.print(f"  • Comments: {candidate['comments']}")
+            console.print(f"  • Watchers: {candidate['watchers']}")
+            console.print("")
         
         # Summary statistics
         avg_age = sum(c['age_days'] for c in candidates) / len(candidates)
         avg_staleness = sum(c['staleness_score'] for c in candidates) / len(candidates)
         unassigned = sum(1 for c in candidates if c['assignee'] == 'Unassigned')
         
-        console.print(f"\n[bold]Summary:[/bold]")
+        console.print("\n[bold]Summary:[/bold]")
         console.print(f"  • Total candidates: {len(candidates)}")
         console.print(f"  • Average age: {avg_age:.0f} days")
         console.print(f"  • Average staleness: {avg_staleness:.0f}/100")
